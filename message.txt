@@ -1,0 +1,122 @@
+type automate = {
+  q : int;
+  i : int list;
+  f : int list;
+  d : int -> char -> int list
+};;
+
+
+let s = [|'a';'b'|]
+
+
+
+
+
+(* fonctions d'affichage *)
+	let affiche_transitions (a :  automate) (print_lettre : 'a -> unit) : unit =
+		for i = 0 to a.q-1 do
+			for j = 0 to (Array.length s)-1 do
+				match a.d i s.(j) with
+				| [] -> ()
+				| l -> print_int i ;
+						print_string "," ;
+						print_lettre s.(j) ;
+						print_string " -> " ;
+						List.iter (fun x -> print_int x ; print_string " ") l ;
+						print_newline ()
+			done
+		done
+
+	let affiche_automate (a : automate) (print_lettre : 'a -> unit) : unit =
+		print_string "I : ";
+		List.iter (fun x -> print_int x ; print_string " ") a.i ;
+		print_newline ();
+		print_string "F : ";
+		List.iter (fun x -> print_int x ; print_string " ") a.f ;
+		print_newline ();
+		affiche_transitions a print_lettre
+
+
+	(* utilisez celle-ci pour afficher un automate dont l'alphabet comporte des char *)
+	let affiche_automate_char (a : automate) : unit = affiche_automate a print_char
+(*---*)
+
+
+
+
+
+
+
+
+
+let a2 = {
+  q = 2;
+  i = [0];
+  f = [1];
+  d = fun k c -> match k,c with
+    | 0, 'a' -> [0]
+    | 0, 'b' -> [1]
+    | 1, 'a' -> [1]
+    | 1, 'b' -> [0]
+    | _,_ -> failwith "hors automate"
+}
+;;
+
+let delta_a3 k c =
+  let tab = [|1;2;4;2;2;1;0;0;2;1;5;5|] in
+  match c with
+    | 'a' -> [tab.(2*k)]
+    | 'b' -> [tab.(2*k + 1)]
+    | _ -> failwith "hors automate"
+;;
+
+let a3 = {
+  q = 6;
+  i = [0];
+  f = [2];
+  d = delta_a3
+}
+;;
+
+affiche_automate_char a3;;
+
+
+let etats_accessibles a =
+  let non_vus = Array.make a.q true in
+  let liste = ref [] in
+  let rec explorer k =
+    if non_vus.(k) then begin 
+      non_vus.(k) <- false;
+      liste := k :: !liste;
+      List.iter explorer (a.d k 'a');
+      List.iter explorer (a.d k 'b');
+    end in
+  List.iter explorer a.i;
+  List.rev !liste
+;;
+
+etats_accessibles a3;;
+
+let numero n a  = 
+  let tab = Array.make n (-1) in
+  let rec aux u k =
+    match u with  
+      | [] -> ()
+      | x :: xs -> begin tab.(x) <- k ; aux xs (k+1) end
+  in
+  aux a 0;
+  tab
+;;
+
+numero 5 [3;2;0];;
+
+
+let partie_accessible a =
+  let l = etats_accessibles a in
+  let nq = List.length l in
+  let nq_new = numero a.q l in
+  let nf = List.filter (fun : x -> List.mem x l) a.i 
+  nq_new
+;;
+
+partie_accessible a3;;
