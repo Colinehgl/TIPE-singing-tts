@@ -1,6 +1,7 @@
 import wave
 import numpy as np
 import os
+from pathlib import Path
 
 ### FONCTION ECRITURE SON FLUIDE
 
@@ -240,10 +241,10 @@ def write_file(audio,filename,fe):
         audio = audio / max_val  # normalise globalement sans écraser les volumes relatifs
     audio = audio * 0.5
     audio = (audio * (2 ** 15 - 1)).astype("<h")
- # conversion en 16 bits (H = 16 bits)
-
-    with wave.open("TESTS/sons/" + filename + ".wav", "w") as f:
-        # 2 pistes.
+    # conversion en 16 bits (H = 16 bits)
+    chemin = Path(__file__).parent.parent / "TESTS" / "SONS" / (filename + ".wav")
+    chemin.parent.mkdir(parents=True, exist_ok=True)  # crée le dossier si absent
+    with wave.open(str(chemin), "w") as f:
         f.setnchannels(2)
         # 2 octets par secondes
         f.setsampwidth(2)
