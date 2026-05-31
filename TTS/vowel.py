@@ -114,4 +114,4 @@ fhu = write_mltp_harmo( params_U )
 fhy = write_mltp_harmo( params_Y )
 
 # tableau fonctions voyelles
-tfv = [fac,foc,fec,fic,fuc,fyc] 
+tfv = [fha,fho,fhe,fhi,fhu,fhy] 
