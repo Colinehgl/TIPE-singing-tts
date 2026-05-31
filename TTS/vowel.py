@@ -13,7 +13,7 @@ def gaussian_formant(f_center, delta, fondamentale=130, nb_harm=30, amp_dft=3):
     for i in range(1, nb_harm + 1):
         f = i * fondamentale
         amp = amp_dft * np.exp(-((f - f_center)**2) / (2 * delta**2))   # gausienne
-        if amp > 0.05:                                                      # seuil pour ne pas additionner du bruit
+        if amp > 0.05:                                                  # seuil pour ne pas additionner du bruit irrélévant
             tab.append((amp, [f]))
     return tab
 
@@ -70,39 +70,48 @@ def voyeller(fil,pas):
         tab = tab + [[[pas*nb,1,formant(v)]]]
     return tab
 
-c_params_A = (
-    gaussian_formant(800,  150, amp_dft=4)  
-  + gaussian_formant(1200, 200, amp_dft=2)  
-  + gaussian_formant(2700, 300, amp_dft=1)  
+params_A = (
+    gaussian_formant(800,  150, amp_dft=4)
+  + gaussian_formant(1200, 200, amp_dft=2)
+  + gaussian_formant(2700, 300, amp_dft=0.8)
 )
 
-c_params_O = (
-    gaussian_formant(500, 100, amp_dft=4)
-  + gaussian_formant(800, 120, amp_dft=2)
-  + gaussian_formant(2500, 300, amp_dft=0.5)
+params_O = (
+    gaussian_formant(450, 80,  amp_dft=4)   
+  + gaussian_formant(750, 90,  amp_dft=2)  
+  + gaussian_formant(2500, 250, amp_dft=0.4)
 )
 
-c_params_E = (
-    gaussian_formant(450,  120)
-  + gaussian_formant(2200, 200)
-  + gaussian_formant(2900, 250)
+params_E = (
+    gaussian_formant(380,  100)             
+  + gaussian_formant(2200, 180)
+  + gaussian_formant(2900, 220)
 )
 
-c_params_I = (
+params_I = (
     gaussian_formant(270,  80)
   + gaussian_formant(2300, 180)  
   + gaussian_formant(3000, 250, amp_dft=1)
 )
 
-fac = write_mltp_harmo( c_params_A ) 
-foc = write_mltp_harmo( c_params_O ) 
-fec = write_mltp_harmo( c_params_E ) 
-fic = write_mltp_harmo( c_params_I ) 
+params_U = (
+    gaussian_formant(300, 60,  amp_dft=4)   
+  + gaussian_formant(700, 80,  amp_dft=2.5) 
+  + gaussian_formant(2200, 200, amp_dft=0.4)
+)
 
+params_Y = (
+    gaussian_formant(250, 60,   amp_dft=4)  
+  + gaussian_formant(1800, 150, amp_dft=3) 
+  + gaussian_formant(2100, 200, amp_dft=1.5)
+)
 
-tab = [[[3,1,fec]]]
+fac = write_mltp_harmo( params_A ) 
+foc = write_mltp_harmo( params_O ) 
+fec = write_mltp_harmo( params_E ) 
+fic = write_mltp_harmo( params_I ) 
+fuc = write_mltp_harmo( params_U )
+fyc = write_mltp_harmo( params_Y )
 
-#tab = voyeller("o-i-i-a-i-a-o-i-i-i-a-o-i",0.2)
-
-audio = bwf.write_audio(tab, fre)
-bwf.write_file(audio, "voyelles/e", fre)
+# tableau fonctions voyelles
+tfv = [fac,foc,fec,fic,fuc,fyc] 
