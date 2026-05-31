@@ -1,4 +1,3 @@
 # TIPE
-Les travaux d'initiative personelle encadres 
 
-Ces travaux sont encore en cours de progression, il est pour l'instant inutilisab
+Projet de création d'un TTS aussi compréhensible que possible en minimisant le stockage, la complexité au minimum et sans se baser sur des algorithmes d'apprentissage.
