@@ -106,12 +106,12 @@ params_Y = (
   + gaussian_formant(2100, 200, amp_dft=1.5)
 )
 
-fac = write_mltp_harmo( params_A ) 
-foc = write_mltp_harmo( params_O ) 
-fec = write_mltp_harmo( params_E ) 
-fic = write_mltp_harmo( params_I ) 
-fuc = write_mltp_harmo( params_U )
-fyc = write_mltp_harmo( params_Y )
+fha = write_mltp_harmo( params_A ) 
+fho = write_mltp_harmo( params_O ) 
+fhe = write_mltp_harmo( params_E ) 
+fhi = write_mltp_harmo( params_I ) 
+fhu = write_mltp_harmo( params_U )
+fhy = write_mltp_harmo( params_Y )
 
 # tableau fonctions voyelles
 tfv = [fac,foc,fec,fic,fuc,fyc] 
