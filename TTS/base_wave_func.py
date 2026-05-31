@@ -3,7 +3,8 @@ import numpy as np
 import os
 from pathlib import Path
 
-### FONCTION ECRITURE SON FLUIDE
+
+#           >>> FONCTION ECRITURE, FLUIDITÉ ET RÉALISME DU SON <<<
 
 def est_nulle(func):
     """
@@ -13,8 +14,7 @@ def est_nulle(func):
 
     :param func: la fonction a tester
     """
-    return func(1)==0 and func(2) == 0
-
+    return func(1) > 0.05 and func(2) > 0.05
 
 def crossfade_blocs(blocs, N=64):
     """
@@ -52,8 +52,7 @@ def crossfade_blocs(blocs, N=64):
 
     return audio
 
-
-def fenetre_cos(dt, tab, fe):
+def fenetre_cos(dt, tab, fe=44100):
     """
     écriture d'une fonction d'amortissage sonore pour la fonction suivante
 
@@ -72,15 +71,20 @@ def fenetre_cos(dt, tab, fe):
     tab[:taille_fenetre] *= hanning
     tab[-taille_fenetre:] *= hanning[::-1]
 
-
-def sinusoidal(freq):
+def sinusoidale(freq):
+    """
+    dans le cas où l'on souhaiterai une fonction sinusoidale simple
+    
+    :param freq: fréquence de la sinusoidale
+    """
     return lambda t: np.sin(2 * np.pi * freq * t)
 
-# Ajouts de Bruits de fond
 def add_bdf(audio, level_db=-85):
     """
-    # Ajoute un bruit blanc très faible au signal audio.
-    # level_db = niveau du bruit en dB par rapport au RMS du signal
+    Ajoute un bruit blanc très faible au signal audio.
+
+    :param audio: audio à modifier
+    :param level_db: niveau du bruit en dB par rapport au RMS du signal
     """
     # amplitude de référence fixe
     ref = 1.0
@@ -89,11 +93,14 @@ def add_bdf(audio, level_db=-85):
     noise = np.random.normal(0, noise_amp, size=audio.shape)
     return audio + noise
 
-def add_realism(audio, fe, depth=0.002, rate=1.2):
+def add_realism(audio, fe=44100, depth=0.002, rate=1.2):
     """
-    # Applique une micro-modulation d'amplitude lente.
-    # depth = profondeur de modulation (≈ 0.1–0.5 %)
-    # rate  = fréquence de la modulation (Hz)
+    Applique une micro-modulation d'amplitude lente.
+
+    :param audio: audio à modifier
+    :param fe: fréquence d'échantillonage
+    :param depth: profondeur de modulation (0.1 -> 0.5 %)
+    :param rate: fréquence de la modulation (Hz)
     """
     n = audio.shape[0]
     t = np.arange(n) / fe
@@ -108,17 +115,29 @@ def add_realism(audio, fe, depth=0.002, rate=1.2):
     return audio * mod
 
 
-### FONCTION ECRITURE TABLEAU AUDIO
 
-def set_piste_audio(d,fe,func,vol,precedent,montant):
+#           >>> FONCTION ECRITURE TABLEAU AUDIO <<<
+
+def set_empty(d,fe=44100): 
     """
-    # écriture d'une piste audio contenant un signal asimilé à une fonction quelconque
-    # d = durée
-    # fe = fréquence d'échantillonage
-    # f = function 
-    # v = volume
-    # precedent =  fréquence précédente,
-    # montant = booléen répondant à " prédemment montant ?"
+    écriture d'une piste audio ne contenant rien
+
+    :param d: durée
+    :param fe: fréquence d'échantillonage
+    """
+    return np.array(np.linspace( 0,d, int(d*fe) ) )
+
+def create_signal(d,fe,func,vol,precedent,montant):
+    """
+    écriture d'un signal audio asimilé à une fonction quelconque.
+    renvoie de plus des données utiles à la concaténation de pistes 
+
+    :param d: durée
+    :param fe: fréquence d'échantillonage
+    :param f: function 
+    :param v: volume
+    :param precedent:  fréquence précédente,
+    :param montant: booléen répondant à " prédemment montant ?"
     """
     # décalage à effectuer pour aligner les sinusoïdales
     # offset = aligner_phases(func, fe, d, precedent, montant)
@@ -142,19 +161,12 @@ def set_piste_audio(d,fe,func,vol,precedent,montant):
     montant = (signal[-1] >= signal[-2])
     return vol * signal, precedent, montant
 
-def set_empty(d,fe): 
+def signaux_to_audio(piste_g,piste_d): 
     """
-    # écriture d'une piste audio ne contenant rien
-    # d = durée
-    # f = fréquence d'échantillonage
-    """
-    return np.array(np.linspace( 0,d, int(d*fe) ) )
+    fusionne deux pistes dans le format sonore contenu dans le fichier wav
 
-def create_audio(piste_g,piste_d): 
-    """
-    # écriture tableau de valeurs sons exploitable
-    # piste_d = piste oreille droite
-    # piste_g = piste oreille gauche    
+    :param piste_d: piste oreille droite
+    :param piste_g: piste oreille gauche    
     """ 
     # pour mettre les pistes gauche et droite identiques       
     if piste_d is None or np.size(piste_d) == 0: # si [[...]] ou [[...],[]]
@@ -163,17 +175,18 @@ def create_audio(piste_g,piste_d):
         return np.array([piste_g,piste_d]).T
     # .T = Transposition, pour passer de matrice (N,2) à (2,N) 
 
-def write_audio(tab, fe):
+def write_audio(tab, fe=44100):
     """
-    > Prend un tableau de tableau de forme :
-        [ [[d1g,volg1,fun1g],[d1d,vold1,fun1d]], ... ]
-    - d1g = durée du son à l'oreille gauche
-    - f1g = fréquence ou fonction pour gauche
-    - func_g1 = fonction du son gauche
-    - vold1 = volume (constante entre 0 et 1)
+    fonction de traduction d'un tableau audio exploitable vers l'audio qui sera dans le fichier wav
+
+    On notera, en remplaçant g par d pour la droite
+    (d1g : durée du son à l'oreille gauche) 
+    (f1g = fréquence ou fonction pour gauche) 
+    (func_g1 = fonction du son gauche) 
+    (vold1 = volume (constante entre 0 et 1))
     
-    > et le transforme en tableau de son exploitable
-    > fe = fréquence d'échantillonnage
+    :param tab: Prend un tableau de tableau de forme [ [[d1g,volg1,fun1g],[d1d,vold1,fun1d]], ... ]
+    :param fe: = fréquence d'échantillonnage
     """
     tab = list(tab)  # pour ne pas altérer le tableau original
     card_tab = len(tab)
@@ -196,7 +209,7 @@ def write_audio(tab, fe):
         volg = tab_g.pop(0)
         fung = tab_g.pop(0)
         if isinstance(fung, (int, float)):
-            fung = sinusoidal(fung)
+            fung = sinusoidale(fung)
 
         if not tab_dg:
             dd, vold, fund = dg, volg, fung
@@ -206,16 +219,16 @@ def write_audio(tab, fe):
             vold = tab_d.pop(0)
             fund = tab_d.pop(0)
             if isinstance(fund, (int, float)):
-                fund = sinusoidal(fund)
+                fund = sinusoidale(fund)
 
         assert dg == dd
 
         # Création des signaux gauche et droite
-        signal_g, precedentg, montantg = set_piste_audio(dg, fe, fung, volg, precedentg, montantg)
-        signal_d, precedentd, montantd = set_piste_audio(dd, fe, fund, vold, precedentd, montantd)
+        signal_g, precedentg, montantg = create_signal(dg, fe, fung, volg, precedentg, montantg)
+        signal_d, precedentd, montantd = create_signal(dd, fe, fund, vold, precedentd, montantd)
 
         # Fusion stéréo
-        bloc = create_audio(signal_g, signal_d)
+        bloc = signaux_to_audio(signal_g, signal_d)
 
         # Ajout du bloc à la liste
         audio_blocks.append(bloc)
@@ -233,16 +246,21 @@ def write_audio(tab, fe):
 
     return audio
 
+def write_file(audio,filename,fe=44100):
+    """
+    écris l'entête de fichier wav et le rempli avec l'audio
 
-#écris l'entête de fichier wav et le rempli avec l'audio
-def write_file(audio,filename,fe):
+    :param audio: tableau audio produit par write_audio
+    :param filename: nom du fichier audio créé
+    :param fe: fréquence d'échantillonage
+    """
     max_val = np.max(np.abs(audio))
     if max_val > 1:
         audio = audio / max_val  # normalise globalement sans écraser les volumes relatifs
     audio = audio * 0.5
     audio = (audio * (2 ** 15 - 1)).astype("<h")
     # conversion en 16 bits (H = 16 bits)
-    chemin = Path(__file__).parent.parent / "TESTS" / "SONS" / (filename + ".wav")
+    chemin = Path(__file__).parent.parent / "SONS" / (filename + ".wav")
     chemin.parent.mkdir(parents=True, exist_ok=True)  # crée le dossier si absent
     with wave.open(str(chemin), "w") as f:
         f.setnchannels(2)

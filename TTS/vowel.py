@@ -1,8 +1,8 @@
-import TTS.base_wave_func as bwf
 import numpy as np
 import PROCESS.text_process as p
 
-fre = 44100
+
+#           >>> FONCTIONS POUR L'ÉCRITURE DES HARMONIQUES <<<
 
 def gaussian_formant(f_center, delta, fondamentale=130, nb_harm=30, amp_dft=3):
     """
@@ -38,37 +38,9 @@ def write_mltp_harmo(freq):
 
     return func
 
-def voyeller(fil,pas):
-    '''
-    permet de transformer un string de voyelle en sons
-    
-    :param fil: string de caractères
-    :param pas: durée arbitraire de l'unité dans le tableau émincé
-    '''
 
-    def formant(chr):
-        match chr:
-            case '-':
-                return lambda x : 0
-            case 'a' :
-                return fa
-            case 'o' : 
-                return fo
-            case 'i' :
-                return fi
-            case 'e' :
-                return fe
-            case _ : 
-                print( "caractère incorrect passsé : ",chr)
-                return lambda x : 2/0
 
-    u = p.emincer(p.decouper(fil,2))
-    print("bb", u)
-    tab  = []
-    for vnb in u :
-        v,nb = vnb 
-        tab = tab + [[[pas*nb,1,formant(v)]]]
-    return tab
+#           >>> FORMANTS DES VOYELLES ET CONSTRUCION DES FONCTIONS <<<
 
 params_A = (
     gaussian_formant(800,  150, amp_dft=4)
@@ -114,6 +86,50 @@ fhu = write_mltp_harmo( params_U )
 fhy = write_mltp_harmo( params_Y )
 
 # tableau fonctions voyelles
-tfv = [fha,fho,fhe,fhi,fhu,fhy] 
+fv = [fha,fho,fhe,fhi,fhu,fhy] 
+
+
+
+#           >>> FONCTIONS EN LIEN AVEC PROCESS <<<
+
+def vth(chr):
+    """
+    Vowel to harmonic   
+    Prends un argument un cractère de voyelle et renvoie sa fonciton
+
+    :param chr: caractère (voyelle)
+    """
+    match chr:
+        case '-':
+            return lambda x : 0
+        case 'a' :
+            return fha
+        case 'o' : 
+            return fho
+        case 'e' :
+            return fhe
+        case 'i' :
+            return fhi
+        case 'u' :
+            return fhu
+        case 'y' :
+            return fhy
+        case _ : 
+            print( "caractère incorrect passsé : ",chr)
+            return lambda x : 1/0 #kaboom
+
+def voyeller(fil,pas):
+    '''
+    permet de transformer un string de voyelle en sons
+    
+    :param fil: string de caractères
+    :param pas: durée arbitraire de l'unité dans le tableau émincé
+    '''
+    u = p.emincer(p.decouper(fil,2))
+    tab  = []
+    for vnb in u : #vnb = voyelle,nombre
+        v,nb = vnb 
+        tab = tab + [[[pas*nb,1,vth(v)]]]
+    return tab
 
 print("vwl correctement importé")
