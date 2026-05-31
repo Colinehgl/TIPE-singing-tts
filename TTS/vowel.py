@@ -115,3 +115,5 @@ fhy = write_mltp_harmo( params_Y )
 
 # tableau fonctions voyelles
 tfv = [fha,fho,fhe,fhi,fhu,fhy] 
+
+print("vwl correctement importé")

@@ -257,4 +257,4 @@ def write_file(audio,filename,fe):
     """
     print(f"Fichier créé : {os.path.abspath(filename)}")  
 
-print("[...]")
+print("bwf correctement importé")
