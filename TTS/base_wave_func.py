@@ -4,6 +4,56 @@ import os
 from pathlib import Path
 
 
+#           >>> DEFINITION DE LA CLASSE DE NOTES ET PARITIONS
+
+class Note:
+    """
+    une note comme encodée dans la partition
+    """
+    def __init__(self,d,v,f):
+        """
+        initialise la note
+        
+        :param d: durée (int)
+        :param v: volume (int dans [0;1])
+        :param f: fonction (int->int)
+        """
+        self.duration = d
+        self.volume = v
+        self.function = f
+
+class Partition:
+    def __init__(self):
+        self.cpd: list[Note] = [] # contenu piste droite
+        self.cpg: list[Note] = [] # contenu piste gauche
+
+    def ajouter(self, ng: Note, nd: Note = None):
+        """
+        rajoute un élément de piste à la suite du reste
+        :param npd: Note qui sera dans la piste gauche
+
+        :param npd: Note qui sera dans la piste droite
+        """
+        if nd == None :
+            nd = ng
+
+        self.cpd.append(ng)
+        self.cpg.append(nd)
+
+    def fusionner(self, nlg: list[Note], nld: list[Note] = None):
+        """
+        fusionne un tableau de triplet de piste oute un élément de piste à la suite du reste
+
+        :param npd: (durée (int), volume (int dans [0;1]), fonction (int->int))
+        :param npd: de même
+        """
+        if nld == None :
+            nld = nlg
+        self.cpg = self.cpg + nlg
+        self.cpd = self.cpd + nld
+
+
+
 #           >>> FONCTION ECRITURE, FLUIDITÉ ET RÉALISME DU SON <<<
 
 def est_nulle(func):

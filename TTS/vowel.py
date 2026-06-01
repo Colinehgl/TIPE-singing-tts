@@ -4,25 +4,13 @@ import PROCESS.text_process as p
 
 #           >>> FONCTIONS POUR L'ÉCRITURE DES HARMONIQUES <<<
 
-def gaussian_formant(f_center, delta, fondamentale=130, nb_harm=30, amp_dft=3):
-    """
-    Génère des tableaux partiels avec amplitude pondérée par une gaussienne
-    centrée sur f_center, de largeur delta.
-    """
-    tab = []
-    for i in range(1, nb_harm + 1):
-        f = i * fondamentale
-        amp = amp_dft * np.exp(-((f - f_center)**2) / (2 * delta**2))   # gausienne
-        if amp > 0.05:                                                  # seuil pour ne pas additionner du bruit irrélévant
-            tab.append((amp, [f]))
-    return tab
-
 def write_mltp_harmo(freq):
     """
-    freq : liste de tuples (k, freqs)
-        - k : facteur de pondération (amplitude)
-        - freqs : liste de fréquences (en Hz)
     Retourne une fonction f(t) = somme pondérée de sinusoïdes.
+
+    :param freq: liste de tuples (k, freqs)
+        - k = facteur de pondération (amplitude)
+        - freqs = liste de fréquences (en Hz)
     """
     def func(t):
         val = 0
@@ -37,6 +25,20 @@ def write_mltp_harmo(freq):
         return val
 
     return func
+
+
+def gaussian_formant(f_center, delta, fondamentale=130, nb_harm=30, amp_dft=3):
+    """
+    Génère des tableaux partiels avec amplitude pondérée par une gaussienne
+    centrée sur f_center, de largeur delta.
+    """
+    tab = []
+    for i in range(1, nb_harm + 1):
+        f = i * fondamentale
+        amp = amp_dft * np.exp(-((f - f_center)**2) / (2 * delta**2))   # gausienne
+        if amp > 0.05:                                                  # seuil pour ne pas additionner du bruit irrélévant
+            tab.append((amp, [f]))
+    return tab
 
 
 
@@ -86,7 +88,7 @@ fhu = write_mltp_harmo( params_U )
 fhy = write_mltp_harmo( params_Y )
 
 # tableau fonctions voyelles
-fv = [fha,fho,fhe,fhi,fhu,fhy] 
+fhv = [fha,fho,fhe,fhi,fhu,fhy] 
 
 
 
