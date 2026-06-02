@@ -1,23 +1,33 @@
+import os
 from tkinter import *
+from tkinter import messagebox
 from src.singing import notes as n
-from TTS import base_wave_func as bwf
+
+
+#           >>> forme de la fenêtre <<<
+
 
 fenetre = Tk()
 fenetre.title("Piano")
 fenetre.minsize(800, 400)
-fenetre.eval('tk::PlaceWindow . center')
+
+largeur = 1500
+hauteur = 650
+ecran_largeur = fenetre.winfo_screenwidth()
+ecran_hauteur = fenetre.winfo_screenheight()
+x = (ecran_largeur // 2) - (largeur // 2)
+y = (ecran_hauteur // 2) - (hauteur // 2)
+fenetre.geometry(f"{largeur}x{hauteur}+{x}+{y}")
 
 
-# Ce fichier est une page tkinter qui genere une surface ou tu peux entrer ta propre melodie
+#           >>> utilité pour la fenêtre <<<
 
-def tab():  # génère tb de freq
-    note_hz = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, -1, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-               0, 0, 0]
+
+def tab():
+    """
+    renvoie le tableau utilisé pour associer au string rentré pour la mélodie en suite de fréquence
+    """
+    note_hz = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     for i in range(5):
         note_hz.append(n.do[i])
@@ -36,62 +46,66 @@ def tab():  # génère tb de freq
     note_hz.append(n.do[5])
     return note_hz
 
+def ecrire(a, b):
+    pass
 
-liste_frequence = tab()
-print(len(liste_frequence))
+def action_bouton():
+    a = expressionSon.get().strip()
+    b = expressionNomF.get().strip()
+    
+    if not a or not b:
+        messagebox.showerror("Erreur", "Champs incomplets : veuillez remplir la mélodie et le nom du fichier.")
+        label_statut.config(text="")
+        return
+
+    print(f"Mélodie : {a}")
+    print(f"Nom du fichier : {b}")
+    
+    ecrire(a, b)
+    
+    chemin_actuel = os.path.dirname(os.path.abspath(__file__))
+    chemin_complet = os.path.join(chemin_actuel, "SONS", b)
+    label_statut.config(text=f"fichier créé : {chemin_complet}", fg="green")
 
 
-def traduction_note():  # mettre les mots en fréquences
-    note_frequence = []
-    texte = entree.get()
-    liste_texte = list(texte)
-
-    for i in range(len(liste_texte)):
-        indice = ord(liste_texte[i])
-        if indice < len(liste_frequence):
-            note_frequence.append(liste_frequence[indice])
-
-    print(note_frequence)
+#           >>> éléments fenêtre <<<
 
 
-# --- Titre ---
 titre = Label(
     fenetre,
     text="Veuillez entrer une mélodie \n Espace = Soupire          ! = prolongement d'un temps",
-    font=("Arial", 14)
+    font=("Arial", 14),
 )
 titre.pack(pady=10)
 
-
-photo = PhotoImage(file="FRONTEND/piano.png")
+photo = PhotoImage(file="src/frontend/piano.png")
 label_image = Label(fenetre, image=photo)
 label_image.pack(pady=10)
 
+cadreSon = Frame(fenetre)
+cadreSon.pack(pady=5)
 
-# --- Cadre pour l'entrée ---
-cadre = Frame(fenetre)
-cadre.pack(pady=10)
+labelSon = Label(cadreSon, text="Mélodie", font=("Arial", 11))
+labelSon.pack()
 
-expression = StringVar()
-expression.set("")
+expressionSon = StringVar()
+entreeSon = Entry(cadreSon, textvariable=expressionSon, width=60)
+entreeSon.pack()
 
-entree = Entry(cadre, textvariable=expression, width=60)
-entree.pack()
+cadreNomF = Frame(fenetre)
+cadreNomF.pack(pady=5)
 
+labelNomF = Label(cadreNomF, text="Nom du fichier", font=("Arial", 11))
+labelNomF.pack()
 
-# --- Centrage fenêtre ---
-largeur = 1500
-hauteur = 500
-ecran_largeur = fenetre.winfo_screenwidth()
-ecran_hauteur = fenetre.winfo_screenheight()
-x = (ecran_largeur // 2) - (largeur // 2)
-y = (ecran_hauteur // 2) - (hauteur // 2)
-fenetre.geometry(f"{largeur}x{hauteur}+{x}+{y}")
+expressionNomF = StringVar()
+entreeNomF = Entry(cadreNomF, textvariable=expressionNomF, width=60)
+entreeNomF.pack()
 
+bouton = Button(fenetre, text="Émettre", command=action_bouton)
+bouton.pack(pady=15)
 
-# --- Bouton ---
-bouton = Button(cadre, text="Émettre", command=traduction_note)
-bouton.pack()
-
+label_statut = Label(fenetre, text="", font=("Arial", 11, "bold"))
+label_statut.pack(pady=5)
 
 fenetre.mainloop()

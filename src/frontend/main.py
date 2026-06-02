@@ -7,8 +7,10 @@ import src.frontend.piano_page as pp
 import src.tts.vowel as v 
 import src.process as p
 
-#Cette fonction est la fonction principale qui fait la plus grand boucle
-
+""" 
+Ce programme est le support principal du logiciel
+il devra mettre en lien les différents autres fichiers pour faire fonctionner le tout
+"""
 
 def main (parole, melodie, intrumental, nom_sortie ) : 
 

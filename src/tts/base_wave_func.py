@@ -118,7 +118,6 @@ def add_realism(audio, fe=44100, depth=0.002, rate=1.2):
 
 #           >>> definition de la classe de notes et paritions <<<
 
-
 class Note:
     """
     une note comme encodée dans la partition
@@ -346,7 +345,6 @@ def writeAudio(p: Partition, fe=44100):
         print(int(written / card_tab * 100), "%")
 
         volg,fung,vold,fund,d = p.pop_in_2()
-        print(volg,fung,vold,fund,d)
         # Création des signaux gauche et droite
         signal_g, precedentg, montantg = createSignal(d, fe, fung, volg, precedentg, montantg)
         signal_d, precedentd, montantd = createSignal(d, fe, fund, vold, precedentd, montantd)
@@ -358,9 +356,6 @@ def writeAudio(p: Partition, fe=44100):
         audio_blocks.append(bloc)
         idx += len(bloc)
         written += 1
-
-
-    print("100%\n")
 
     # Applique crossfade à la fin, sur tous les blocs
     audio = crossfade_blocs(audio_blocks)
@@ -393,11 +388,7 @@ def writeFile(audio,filename,fe=44100):
         f.setsampwidth(2)
         f.setframerate(fe)
         f.writeframes(audio.tobytes())
-    """
-    with open('new.txt', 'w') as fp:
-        for item in audio:
-            fp.write("%s\n" % item)
-    """
+
     print(f"Fichier créé : {os.path.abspath(filename)}")  
 
 print("bwf correctement importé")
