@@ -4,57 +4,8 @@ import os
 from pathlib import Path
 
 
-#           >>> DEFINITION DE LA CLASSE DE NOTES ET PARITIONS
+#           >>> fonction, fluidité et réalisme du son <<<
 
-class Note:
-    """
-    une note comme encodée dans la partition
-    """
-    def __init__(self,d,v,f):
-        """
-        initialise la note
-        
-        :param d: durée (int)
-        :param v: volume (int dans [0;1])
-        :param f: fonction (int->int)
-        """
-        self.duration = d
-        self.volume = v
-        self.function = f
-
-class Partition:
-    def __init__(self):
-        self.cpd: list[Note] = [] # contenu piste droite
-        self.cpg: list[Note] = [] # contenu piste gauche
-
-    def ajouter(self, ng: Note, nd: Note = None):
-        """
-        rajoute un élément de piste à la suite du reste
-        :param npd: Note qui sera dans la piste gauche
-
-        :param npd: Note qui sera dans la piste droite
-        """
-        if nd == None :
-            nd = ng
-
-        self.cpd.append(ng)
-        self.cpg.append(nd)
-
-    def fusionner(self, nlg: list[Note], nld: list[Note] = None):
-        """
-        fusionne un tableau de triplet de piste oute un élément de piste à la suite du reste
-
-        :param npd: (durée (int), volume (int dans [0;1]), fonction (int->int))
-        :param npd: de même
-        """
-        if nld == None :
-            nld = nlg
-        self.cpg = self.cpg + nlg
-        self.cpd = self.cpd + nld
-
-
-
-#           >>> FONCTION ECRITURE, FLUIDITÉ ET RÉALISME DU SON <<<
 
 def est_nulle(func):
     """
@@ -165,10 +116,153 @@ def add_realism(audio, fe=44100, depth=0.002, rate=1.2):
     return audio * mod
 
 
+#           >>> definition de la classe de notes et paritions <<<
 
-#           >>> FONCTION ECRITURE TABLEAU AUDIO <<<
 
-def set_empty(d,fe=44100): 
+class Note:
+    """
+    une note comme encodée dans la partition
+    """
+    def __init__(self,d: int,v: float , func=None , freq = 0):
+        """
+        initialise la note de durée d à un volume v avec la fonction f
+        
+        :param d: durée (int)
+        :param v: volume (int dans [0;1])
+        :param func: fonction (int->int) à remplacer on veut une sinusoidale simple
+        :param freq: fréquence de la sinusoidale simple
+        """
+        self.duration = d
+        self.volume = v
+        if func is None :
+            if freq == 0 :
+                self.function = lambda t: 0
+            else:
+                f = sinusoidale(freq)
+                self.function = f
+        else :
+            self.function = func
+    
+    def afficher_n(self,retour_ligne : bool = True):
+        """
+        affiche la note
+
+        :param RetourLigne: True si on souhaite un retour à la ligne après le print
+        """
+        if retour_ligne :
+            print("(", self.duration, ", ", self.volume, ", ", self.function, ") ")
+        else :
+            print("(", self.duration, ", ", self.volume, ", ", self.function, ") ", end=" ")
+    
+    def open_n(self):
+        """
+        renvoie un 3-uplets des 3 éléments de la Note
+        """
+        return self.duration, self.volume, self.function
+
+class Partition:
+    """
+    classe représentant les étapes de sons à écrire, initialement vide
+    """
+    def __init__(self):
+        self.cpd: list[Note] = []   # contenu piste droite
+        self.cpg: list[Note] = []   # contenu piste gauche
+        self.dtot = 0               # durée totale de la parition
+
+    def ajouter(self, ng: Note, nd: Note = None):
+        """
+        rajoute un élément de piste à la suite du reste
+        :param npd: Note qui sera dans la piste gauche
+
+        :param npd: Note qui sera dans la piste droite
+        """
+        if nd == None :
+            nd = ng
+        if ng.duration != nd.duration:
+            raise ValueError("Les notes ajoutées pistes droite et gauche doivent avoir la même durée\n")
+        self.cpd.append(ng)
+        self.cpg.append(nd)
+        self.dtot = self.dtot + ng.duration
+
+    def fusionner(self, nlg: list[Note], nld: list[Note] = None):
+        """
+        fusionne un tableau de triplet de piste oute un élément de piste à la suite du reste
+
+        :param npd: (durée (int), volume (int dans [0;1]), fonction (int->int))
+        :param npd: de même
+        """
+        if nld == None :
+            nld = nlg
+
+        lg = 0    #longeur piste gauche
+        ld = 0    #longeur piste droite
+        for ng in nlg :
+            lg = lg + ng.duration
+        for nd in nld : 
+            ld = ld + nd.duration
+        
+        if ld != lg :
+            raise ValueError("Les listes de note doivent avoir la même longueur temporelle")
+
+        self.cpg = self.cpg + nlg
+        self.cpd = self.cpd + nld
+        self.dtot = self.dtot + lg
+        
+    def renverser(self):
+        """
+        équivalent d'un list.reverse() sur les deux pistes contenues dans la partition
+        """
+        self.cpg.reverse()
+        self.cpd.reverse()
+
+    def afficher(self):
+        """
+        fonction pour debug, affiche simplement la parition
+        """
+        print("\nPiste gauche : ") 
+        for n in self.cpg :
+            n.afficher_n()
+        print("Piste droite : ") 
+        for n in self.cpd :
+            n.afficher_n()
+        print("taille = ", self.dtot, "\n")
+
+    def nonVide(self):
+        """
+        renvoie vrai si la partition est vide
+        """
+        return self.dtot != 0
+    
+    def pop_in_2(self):
+        """
+        unpack une valeur temporelle et renvoie les R valeurs suivantes : 
+
+        le volume et la fonction du son de la piste gauche
+        puis de même pour la piste droite, puis la durée de la note popped
+        """
+        dg,vg,fg = self.cpg.pop().open_n()   
+        dd,vd,fd = self.cpd.pop().open_n()
+        d = min(dg,dd)
+
+        if dg < dd: #on va couper la partie de la piste droite qui ne sera pas pop
+            dr = dd - dg # durée restante
+            nnd = Note(dr,vd,fd) # nouvelle note droite
+            self.cpd.append(nnd)
+            self.dtot = self.dtot - dg 
+        elif dg > dd: # de même si la partie droite est plus courte
+            dr = dg - dd 
+            nng = Note(dr,vg,fg) # nouvelle note gauche
+            self.cpg.append(nng)
+            self.dtot = self.dtot - dd
+        else :
+            self.dtot = self.dtot - d
+        return vg,fg,vd,fd,d
+
+
+#           >>> fonction ecriture tableau audio <<<
+
+
+def setEmpty(d,fe=44100): 
     """
     écriture d'une piste audio ne contenant rien
 
@@ -177,7 +271,7 @@ def set_empty(d,fe=44100):
     """
     return np.array(np.linspace( 0,d, int(d*fe) ) )
 
-def create_signal(d,fe,func,vol,precedent,montant):
+def createSignal(d,fe,func,vol,precedent,montant):
     """
     écriture d'un signal audio asimilé à une fonction quelconque.
     renvoie de plus des données utiles à la concaténation de pistes 
@@ -186,7 +280,7 @@ def create_signal(d,fe,func,vol,precedent,montant):
     :param fe: fréquence d'échantillonage
     :param f: function 
     :param v: volume
-    :param precedent:  fréquence précédente,
+    :param precedent: fréquence du son précédente
     :param montant: booléen répondant à " prédemment montant ?"
     """
     # décalage à effectuer pour aligner les sinusoïdales
@@ -211,7 +305,7 @@ def create_signal(d,fe,func,vol,precedent,montant):
     montant = (signal[-1] >= signal[-2])
     return vol * signal, precedent, montant
 
-def signaux_to_audio(piste_g,piste_d): 
+def signalToAudio(piste_g,piste_d): 
     """
     fusionne deux pistes dans le format sonore contenu dans le fichier wav
 
@@ -225,7 +319,7 @@ def signaux_to_audio(piste_g,piste_d):
         return np.array([piste_g,piste_d]).T
     # .T = Transposition, pour passer de matrice (N,2) à (2,N) 
 
-def write_audio(tab, fe=44100):
+def writeAudio(p: Partition, fe=44100):
     """
     fonction de traduction d'un tableau audio exploitable vers l'audio qui sera dans le fichier wav
 
@@ -238,52 +332,33 @@ def write_audio(tab, fe=44100):
     :param tab: Prend un tableau de tableau de forme [ [[d1g,volg1,fun1g],[d1d,vold1,fun1d]], ... ]
     :param fe: = fréquence d'échantillonnage
     """
-    tab = list(tab)  # pour ne pas altérer le tableau original
-    card_tab = len(tab)
+    card_tab = len(p.cpg)
     written = 0
     idx = 0
 
     # Initialisation
-    tab.reverse()
     audio_blocks = []
     precedentd = precedentg = 0
     montantd = montantg = True
+    while p.nonVide() :
 
-    while tab:
         # Affichage de la progression
         print(int(written / card_tab * 100), "%")
 
-        tab_dg = tab.pop()  # [[dg,volg,fung],[dd,vold,fund]]
-        tab_g = tab_dg.pop()  # [dg, volg, fung]
-        dg = tab_g.pop(0)
-        volg = tab_g.pop(0)
-        fung = tab_g.pop(0)
-        if isinstance(fung, (int, float)):
-            fung = sinusoidale(fung)
-
-        if not tab_dg:
-            dd, vold, fund = dg, volg, fung
-        else:
-            tab_d = tab_dg.pop()
-            dd = tab_d.pop(0)
-            vold = tab_d.pop(0)
-            fund = tab_d.pop(0)
-            if isinstance(fund, (int, float)):
-                fund = sinusoidale(fund)
-
-        assert dg == dd
-
+        volg,fung,vold,fund,d = p.pop_in_2()
+        print(volg,fung,vold,fund,d)
         # Création des signaux gauche et droite
-        signal_g, precedentg, montantg = create_signal(dg, fe, fung, volg, precedentg, montantg)
-        signal_d, precedentd, montantd = create_signal(dd, fe, fund, vold, precedentd, montantd)
+        signal_g, precedentg, montantg = createSignal(d, fe, fung, volg, precedentg, montantg)
+        signal_d, precedentd, montantd = createSignal(d, fe, fund, vold, precedentd, montantd)
 
         # Fusion stéréo
-        bloc = signaux_to_audio(signal_g, signal_d)
+        bloc = signalToAudio(signal_g, signal_d)
 
         # Ajout du bloc à la liste
         audio_blocks.append(bloc)
         idx += len(bloc)
         written += 1
+
 
     print("100%\n")
 
@@ -296,7 +371,7 @@ def write_audio(tab, fe=44100):
 
     return audio
 
-def write_file(audio,filename,fe=44100):
+def writeFile(audio,filename,fe=44100):
     """
     écris l'entête de fichier wav et le rempli avec l'audio
 
@@ -310,7 +385,7 @@ def write_file(audio,filename,fe=44100):
     audio = audio * 0.5
     audio = (audio * (2 ** 15 - 1)).astype("<h")
     # conversion en 16 bits (H = 16 bits)
-    chemin = Path(__file__).parent.parent / "SONS" / (filename + ".wav")
+    chemin = Path(__file__).parent.parent.parent / "SONS" / (filename + ".wav")
     chemin.parent.mkdir(parents=True, exist_ok=True)  # crée le dossier si absent
     with wave.open(str(chemin), "w") as f:
         f.setnchannels(2)

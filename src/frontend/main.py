@@ -1,10 +1,10 @@
 import wave
 import numpy as np
 
-import combinaison_son as cs
-import extraction_liste as el 
+import src.process.combinaison_son as cs
+import src.process.extraction_liste as el 
 import src.frontend.piano_page as pp
-import vowel as v 
+import src.tts.vowel as v 
 import src.process as p
 
 #Cette fonction est la fonction principale qui fait la plus grand boucle

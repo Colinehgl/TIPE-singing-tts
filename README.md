@@ -14,6 +14,8 @@ le dossier tts concentre le code même du synthétiseur vocal.
 
 l'interface utilisateur n'étant pas achevée, il n'y a pas encore de fichiers en dehors du code source pour lancer le logiciel.
 
+les fichiers actuellement fonctionnels sont ceux situés dans src/tts .
+
 ---
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
