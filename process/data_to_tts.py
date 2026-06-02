@@ -1,6 +1,6 @@
 from TTS import base_wave_func as bwf
 import numpy as np
-from PROCESS import text_process as p
+from process import text_process as p
 fre = 44100
 
 # fonctions pour simplfier l'écriture
