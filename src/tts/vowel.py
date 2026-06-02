@@ -1,5 +1,5 @@
 import numpy as np
-import process.text_process as p
+import src.process.text_process as p
 
 
 #           >>> FONCTIONS POUR L'ÉCRITURE DES HARMONIQUES <<<

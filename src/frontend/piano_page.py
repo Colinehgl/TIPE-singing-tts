@@ -1,5 +1,5 @@
 from tkinter import *
-from singing import notes as n
+from src.singing import notes as n
 from TTS import base_wave_func as bwf
 
 fenetre = Tk()
