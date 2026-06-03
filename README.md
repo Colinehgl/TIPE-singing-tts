@@ -1,7 +1,7 @@
 # TIPE : Voix de synthèse pour chant numérique
 
 
-Réalisation d'un logiciel Text-To-Speech (synthétiseur vocal) capable de chanter.dans le cadre du TIPE.
+Réalisation d'un logiciel Text-To-Speech (synthétiseur vocal) capable de chanter dans le cadre du TIPE.
 
 L'objectif de ce projet est de réaliser un logiciel permettant à l'utilisateur, muni d'un texte et d'une mélodie simple de générer un fichier wav qui contiendrai un chant correspondant au paroles, avec le texte proposé.
 
