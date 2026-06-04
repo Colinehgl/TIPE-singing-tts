@@ -320,21 +320,15 @@ def signalToAudio(piste_g,piste_d):
 
 def writeAudio(p: Partition, fe=44100):
     """
-    fonction de traduction d'un tableau audio exploitable vers l'audio qui sera dans le fichier wav
+    fonction de traduction d'une partition vers le tableau réprésentant l'audio qui sera dans le fichier wav
 
-    On notera, en remplaçant g par d pour la droite
-    (d1g : durée du son à l'oreille gauche) 
-    (f1g = fréquence ou fonction pour gauche) 
-    (func_g1 = fonction du son gauche) 
-    (vold1 = volume (constante entre 0 et 1))
-    
-    :param tab: Prend un tableau de tableau de forme [ [[d1g,volg1,fun1g],[d1d,vold1,fun1d]], ... ]
+    :param p: partition du son à écrire
     :param fe: = fréquence d'échantillonnage
     """
     card_tab = len(p.cpg)
     written = 0
     idx = 0
-
+    p.renverser()
     # Initialisation
     audio_blocks = []
     precedentd = precedentg = 0
@@ -390,5 +384,77 @@ def writeFile(audio,filename,fe=44100):
         f.writeframes(audio.tobytes())
 
     print(f"Fichier créé : {os.path.abspath(filename)}")  
+
+def partitionToFile(p: Partition, filename, fe=44100):
+    """
+    Crée un fichier audio contenant le son correspondant à la partition donnée en entrée
+    
+    :param p: partition représentant le son à créer
+    :param filename: nom du ficheir qui sera créé
+    :param fe: fréquence d'échantillonage
+    """
+    audio = writeAudio(p,fe)
+    writeFile(audio,filename)
+
+
+#       >>> fonction ecriture tableau audio - version cyclique <<<
+
+def generer_morceaux(p: Partition, fe: int):
+    """
+    prends une partition en renvoie, un par un, les fragments de son comme 
+    ce sera encondé dans le fichier
+
+    :param p: patition du son à écrire
+    :param fe: fréquence d'échantillonage
+
+    """
+    precedent_d, precedent_g = 0, 0
+    montant_d, montant_g = True, True
+
+    while p.nonVide():
+        vg,fg,vd,fd,d = p.pop_in_2()
+
+        signal_g, precedent_g, montant_g = createSignal(d, fe, fg, vg, precedent_g, montant_g)
+        signal_d, precedent_d, montant_d = createSignal(d, fe, fd, vd, precedent_d, montant_d)
+
+        stereo = np.column_stack((signal_g, signal_d))
+        yield stereo,d
+
+def partitionToFileCyclique(p: Partition, filename, fe=44100):
+    """
+    Crée un fichier audio contenant le son correspondant à la partition donnée en entrée
+    cette fois, ne calcule pas tout le son d'un coup, mais l'ajoute progressivement
+    
+    :param p: partition représentant le son à créer
+    :param filename: nom du ficheir qui sera créé
+    :param fe: fréquence d'échantillonage
+    """
+    p.renverser()
+    d_tot = p.dtot  #durée totale audio
+    d_ecrite = 0    #durée écrite audio
+    chemin = Path(__file__).parent.parent.parent / "SONS" / (filename + ".wav")
+    chemin.parent.mkdir(parents=True, exist_ok=True)
+
+    with wave.open(str(chemin), "w") as f:
+        f.setnchannels(2)
+        f.setsampwidth(2)
+        f.setframerate(fe)
+
+
+        for morceau,d in generer_morceaux(p, fe):  # ton itérateur/générateur
+            d_ecrite += d 
+            # normalisation locale du morceau
+            max_val = np.max(np.abs(morceau))
+            if max_val > 1:
+                morceau = morceau / max_val
+            morceau = morceau * 0.5
+            morceau = (morceau * (2**15 - 1)).astype("<h")
+
+            f.writeframes(morceau.tobytes())  # écriture immédiate
+            print(int(d_ecrite / d_tot * 100), "%")
+
+
+    print(f"Fichier créé : {chemin}")
+
 
 print("bwf correctement importé")

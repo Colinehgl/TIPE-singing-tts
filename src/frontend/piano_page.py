@@ -47,7 +47,7 @@ def tab():
     return note_hz
 
 def ecrire(a, b):
-    pass
+    print("a=", a, "b=", b)
 
 def action_bouton():
     a = expressionSon.get().strip()

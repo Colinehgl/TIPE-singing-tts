@@ -4,6 +4,7 @@ import src.process.text_process as p
 
 #           >>> FONCTIONS POUR L'ÉCRITURE DES HARMONIQUES <<<
 
+
 def write_mltp_harmo(freq):
     """
     Retourne une fonction f(t) = somme pondérée de sinusoïdes.
@@ -43,6 +44,7 @@ def gaussian_formant(f_center, delta, fondamentale=130, nb_harm=30, amp_dft=3):
 
 
 #           >>> FORMANTS DES VOYELLES ET CONSTRUCION DES FONCTIONS <<<
+
 
 params_A = (
     gaussian_formant(800,  150, amp_dft=4)
@@ -94,6 +96,7 @@ fhv = [fha,fho,fhe,fhi,fhu,fhy]
 
 #           >>> FONCTIONS EN LIEN AVEC PROCESS <<<
 
+
 def vth(chr):
     """
     Vowel to harmonic   
@@ -133,5 +136,6 @@ def voyeller(fil,pas):
         v,nb = vnb 
         tab = tab + [[[pas*nb,1,vth(v)]]]
     return tab
+
 
 print("vwl correctement importé")
