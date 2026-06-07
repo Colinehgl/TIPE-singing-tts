@@ -1,2 +1,15 @@
 TESTS/
 SONS/
+code_frames.tex
+tipeppt.aux
+tipeppt.log
+tipeppt.nav
+tipeppt.out
+tipeppt.pdf
+tipeppt.snm
+tipeppt.toc
+tipeppt.vrb
+x.log
+ppt/
+_minted-tipeppt/
+venv/

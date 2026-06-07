@@ -3,6 +3,11 @@ import numpy as np
 import os
 from pathlib import Path
 
+#           >>> PARAMÈTRES GLOBAUX <<<
+
+FE  = 44100   # fréquence d'échantillonnage (Hz)
+F0  = 130     # fréquence fondamentale glottale
+
 
 #           >>> fonction, fluidité et réalisme du son <<<
 
@@ -53,7 +58,7 @@ def crossfade_blocs(blocs, N=64):
 
     return audio
 
-def fenetre_cos(dt, tab, fe=44100):
+def fenetre_cos(dt, tab, fe=FE):
     """
     écriture d'une fonction d'amortissage sonore pour la fonction suivante
 
@@ -80,7 +85,7 @@ def sinusoidale(freq):
     """
     return lambda t: np.sin(2 * np.pi * freq * t)
 
-def add_bdf(audio, level_db=-85):
+def addBdf(audio, level_db=-85):
     """
     Ajoute un bruit blanc très faible au signal audio.
 
@@ -94,7 +99,7 @@ def add_bdf(audio, level_db=-85):
     noise = np.random.normal(0, noise_amp, size=audio.shape)
     return audio + noise
 
-def add_realism(audio, fe=44100, depth=0.002, rate=1.2):
+def addRealism(audio, fe=FE, depth=0.002, rate=1.2):
     """
     Applique une micro-modulation d'amplitude lente.
 
@@ -115,8 +120,70 @@ def add_realism(audio, fe=44100, depth=0.002, rate=1.2):
 
     return audio * mod
 
+def bandeBruit(f_low, f_high, n, fe=FE):
+    """
+    Génère un bruit blanc filtré entre f_low et f_high par FFT.
+    Retourne un tableau normalisé de longueur n.
+
+    :param f_low:  fréquence basse de la bande passante (Hz)
+    :param f_high: fréquence haute de la bande passante (Hz)
+    :param n:      nombre d'échantillons
+    :param fe:     fréquence d'échantillonnage
+    """
+    bruit   = np.random.randn(n)
+    spectre = np.fft.rfft(bruit)
+    freqs   = np.fft.rfftfreq(n, 1 / fe)
+    spectre[(freqs < f_low) | (freqs > f_high)] = 0
+    filtre  = np.fft.irfft(spectre, n)
+    mx = np.max(np.abs(filtre))
+    return filtre / mx if mx > 0 else filtre
+
+def enveloppe(n, attaque=0.15, declin=0.25):
+    """
+    Enveloppe d'amplitude linéaire : montée → tenue → descente.
+
+    :param n:       taille du signal
+    :param attaque: fraction de n pour la montée
+    :param declin:  fraction de n pour la descente
+    """
+    env = np.ones(n)
+    na  = max(1, int(n * attaque))
+    nd  = max(1, int(n * declin))
+    env[:na]  = np.linspace(0, 1, na)
+    env[-nd:] = np.linspace(1, 0, nd)
+    return env
+
+def versFunc(signal, duree):
+    """
+    Encapsule un tableau numpy pré-calculé en fonction f(t)
+
+    :param signal: tableau numpy 1D du signal
+    :param duree:  durée correspondante en secondes
+    """
+    t_ref = np.linspace(0, duree, len(signal))
+    def f(t):
+        tc = np.clip(np.asarray(t, dtype=float), 0, duree * (1 - 1e-9))
+        return np.interp(tc, t_ref, signal)
+    return f
+
+def harmBase(n, f0=F0, nb_harm=12, fe=FE):
+    """
+    Excitation glottale simplifiée : somme d'harmoniques pondérés en 1/k
+    surtout utilisée dans consonant.py
+
+    :param n:       nombre d'échantillons
+    :param f0:      fondamentale (Hz)
+    :param nb_harm: nombre d'harmoniques
+    :param fe:      fréquence d'échantillonnage
+    """
+    t   = np.arange(n) / fe
+    sig = sum((1 / k) * np.sin(2 * np.pi * k * f0 * t) for k in range(1, nb_harm + 1))
+    mx  = np.max(np.abs(sig))
+    return sig / mx if mx > 0 else sig
+
 
 #           >>> definition de la classe de notes et paritions <<<
+
 
 class Note:
     """
@@ -230,7 +297,7 @@ class Partition:
         """
         renvoie vrai si la partition est vide
         """
-        return self.dtot != 0
+        return len(self.cpg) > 0 and len(self.cpd) > 0
     
     def pop_in_2(self):
         """
@@ -261,7 +328,7 @@ class Partition:
 #           >>> fonction ecriture tableau audio <<<
 
 
-def setEmpty(d,fe=44100): 
+def setEmpty(d,fe=FE): 
     """
     écriture d'une piste audio ne contenant rien
 
@@ -318,7 +385,7 @@ def signalToAudio(piste_g,piste_d):
         return np.array([piste_g,piste_d]).T
     # .T = Transposition, pour passer de matrice (N,2) à (2,N) 
 
-def writeAudio(p: Partition, fe=44100):
+def writeAudio(p: Partition, fe=FE):
     """
     fonction de traduction d'une partition vers le tableau réprésentant l'audio qui sera dans le fichier wav
 
@@ -355,12 +422,12 @@ def writeAudio(p: Partition, fe=44100):
     audio = crossfade_blocs(audio_blocks)
 
     # On rend l'audio plus réalise
-    audio = add_bdf(audio, level_db=-85)
-    audio = add_realism(audio, fe, depth=0.002, rate=1.2)
+    audio = addBdf(audio, level_db=-85)
+    audio = addRealism(audio, fe, depth=0.002, rate=1.2)
 
     return audio
 
-def writeFile(audio,filename,fe=44100):
+def writeFile(audio,filename,fe=FE):
     """
     écris l'entête de fichier wav et le rempli avec l'audio
 
@@ -385,7 +452,7 @@ def writeFile(audio,filename,fe=44100):
 
     print(f"Fichier créé : {os.path.abspath(filename)}")  
 
-def partitionToFile(p: Partition, filename, fe=44100):
+def partitionToFile(p: Partition, filename, fe=FE):
     """
     Crée un fichier audio contenant le son correspondant à la partition donnée en entrée
     
@@ -398,6 +465,7 @@ def partitionToFile(p: Partition, filename, fe=44100):
 
 
 #       >>> fonction ecriture tableau audio - version cyclique <<<
+
 
 def generer_morceaux(p: Partition, fe: int):
     """
@@ -420,7 +488,7 @@ def generer_morceaux(p: Partition, fe: int):
         stereo = np.column_stack((signal_g, signal_d))
         yield stereo,d
 
-def partitionToFileCyclique(p: Partition, filename, fe=44100):
+def partitionToFileCyclique(p: Partition, filename, fe=FE):
     """
     Crée un fichier audio contenant le son correspondant à la partition donnée en entrée
     cette fois, ne calcule pas tout le son d'un coup, mais l'ajoute progressivement
