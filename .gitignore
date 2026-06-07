@@ -1,5 +1,8 @@
 TESTS/
 SONS/
+venv/
+ppt/
+_minted-tipeppt/
 code_frames.tex
 tipeppt.aux
 tipeppt.log
@@ -10,6 +13,4 @@ tipeppt.snm
 tipeppt.toc
 tipeppt.vrb
 x.log
-ppt/
-_minted-tipeppt/
-venv/
+
